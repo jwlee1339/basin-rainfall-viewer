@@ -1,0 +1,40 @@
+{
+  "AreaName": "09翡翠水庫",
+  "Rstbase": [
+    {
+      "StaNo": "01A190",
+       "code": "F02",
+      "NameC": "碧湖",
+      "GpsLong": 121.7456,
+      "GpsLat": 24.8909
+    },
+    {
+      "StaNo": "C0A530",
+      "code": "F03",
+      "NameC": "坪林",
+      "GpsLong": 121.7094,
+      "GpsLat": 24.9382
+    },
+    {
+      "StaNo": "L1A810",
+      "code": "F04",
+      "NameC": "九芎根",
+      "GpsLong": 121.6499,
+      "GpsLat": 24.9024
+    },
+    {
+      "StaNo": "L1A820",
+      "code": "F05",
+      "NameC": "十三股",
+      "GpsLong": 121.6496,
+      "GpsLat": 24.944
+    },
+    {
+      "StaNo": "L1A840",
+      "code": "F01",
+      "NameC": "太平",
+      "GpsLong": 121.8282,
+      "GpsLat": 24.9718
+    }
+  ]
+}

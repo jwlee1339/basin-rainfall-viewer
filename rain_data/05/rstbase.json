@@ -1,0 +1,75 @@
+{
+  "AreaName": "05石門水庫",
+  "Rstbase": [
+    {
+      "StaNo": "21C050",
+      "code": "S10",
+      "NameC": "石門",
+      "GpsLong": 121.248507,
+      "GpsLat": 24.8093278
+    },
+    {
+      "StaNo": "21C070",
+      "code": "S04",
+      "NameC": "巴陵",
+      "GpsLong": 121.3953,
+      "GpsLat": 24.6852
+    },
+    {
+      "StaNo": "21C080",
+      "code": "S02",
+      "NameC": "高義",
+      "GpsLong": 121.3616,
+      "GpsLat": 24.7112
+    },
+    {
+      "StaNo": "21C090",
+      "code": "S06",
+      "NameC": "嘎拉賀",
+      "GpsLong": 121.3999,
+      "GpsLat": 24.6415
+    },
+    {
+      "StaNo": "21C140",
+      "code": "S01",
+      "NameC": "霞雲",
+      "GpsLong": 121.3649,
+      "GpsLat": 24.7924
+    },
+    {
+      "StaNo": "21D150",
+      "code": "S03",
+      "NameC": "玉峰",
+      "GpsLong": 121.3011,
+      "GpsLat": 24.6596
+    },
+    {
+      "StaNo": "21D160",
+      "code": "S07",
+      "NameC": "白石",
+      "GpsLong": 121.2604,
+      "GpsLat": 24.5886
+    },
+    {
+      "StaNo": "21D350",
+      "code": "S09",
+      "NameC": "西丘斯山",
+      "GpsLong": 121.3637,
+      "GpsLat": 24.5226
+    },
+    {
+      "StaNo": "81D740",
+      "code": "S08",
+      "NameC": "鎮西堡",
+      "GpsLong": 121.3039,
+      "GpsLat": 24.5675
+    },
+    {
+      "StaNo": "S05",
+      "code": "S05",
+      "NameC": "池端",
+      "GpsLong": 121.4667,
+      "GpsLat": 24.6833
+    }
+  ]
+}

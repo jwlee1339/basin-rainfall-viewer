@@ -1,0 +1,86 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+.chart-container {
+    position: relative;
+    height: 450px; /* 設定圖表容器的高度 */
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- Display for Average Rainfall Total --- */
+#avg-rainfall-total-display {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background-color: rgba(255, 99, 132, 0.85); /* Match the avg line color */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: normal; /* 將字體改為非粗體 */
+    z-index: 10; /* Ensure it's above the chart canvas */
+    display: none; /* Initially hidden */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+#map {
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* --- Leaflet Custom Controls --- */
+.info.coordinates {
+    padding: 6px 10px;
+    font: 12px/1.5 Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    color: #333;
+}
+
+/* --- Custom Home Button for Leaflet --- */
+.leaflet-control-home {
+    font-size: 1.5em;
+    font-weight: bold;
+    line-height: 1.6rem; /* Fine-tune vertical alignment in the 30x30px box */
+    background-color: #0d6efd; /* 使用 Bootstrap 的主要藍色作為底色 */
+    color: #fff !important; /* 將圖示顏色改為白色以確保對比度 */
+}
+
+.leaflet-control-home:hover {
+    cursor: pointer; /* 當滑鼠懸停時，顯示為可點擊的手形圖示 */
+    background-color: #0b5ed7; /* 滑鼠懸停時使用稍暗的藍色 */
+}
+
+/* --- Data Table Styles --- */
+#data-table-container {
+    max-height: 500px;
+    overflow: auto; /* Handles both vertical and horizontal scroll */
+}
+
+#data-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+/* Make table header sticky within the scrollable container */
+#data-table-container thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1; /* Ensure header is above the body */
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-bottom: 20px;
+    color: #888;
+    font-size: 12px;
+}
