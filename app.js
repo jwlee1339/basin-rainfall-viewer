@@ -48,6 +48,33 @@ document.addEventListener("DOMContentLoaded", () => {
       shadowSize: [41, 41]
   });
 
+  const aboveAverageIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+  });
+
+  const belowAverageIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+  });
+
+  const noDataIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+  });
+
 
 
 
@@ -281,30 +308,18 @@ document.addEventListener("DOMContentLoaded", () => {
       // Based on the Python script's naming convention, the yearly file is named after the first day of the year.
       const yearStartDate = `${selectedYear}-01-01`;
       const individualFile = `rain_data/${reservoirId}/${reservoirId}_${yearStartDate}.csv`;
-      const avgFile = `rain_data/${reservoirId}/${reservoirId}_${yearStartDate}_avg.csv`;
 
       try {
-        const [individualRes, avgRes] = await Promise.all([
-          fetch(individualFile),
-          fetch(avgFile),
-        ]);
+        const individualRes = await fetch(individualFile);
 
         if (!individualRes.ok)
           throw new Error(`無法載入測站資料: ${individualFile}`);
-        if (!avgRes.ok) throw new Error(`無法載入平均資料: ${avgFile}`);
 
         const individualText = await individualRes.text();
-        const avgText = await avgRes.text();
 
         // Parse and cache the entire year's data
         const individualData = parseCSV(individualText);
         console.log(`載入 ${individualData.length} 筆測站資料`);
-        console.log(`載入平均資料...`);
-        fullYearAvgData = parseCSV(avgText).map(d => ({
-          // Replace space with 'T' for better cross-browser date parsing consistency
-          x: new Date(d.Date_Time.replace(' ', 'T')),
-          y: parseFloat(d.Avg_Rain) >= 0 ? parseFloat(d.Avg_Rain) : null,
-        }));
 
         fullYearStationData = {};
         const stations = new Set();
@@ -320,6 +335,34 @@ document.addEventListener("DOMContentLoaded", () => {
             y: parseFloat(row.RAIN) >= 0 ? parseFloat(row.RAIN) : null,
           });
         });
+
+        // --- 動態計算所有測站的平均雨量 ---
+        console.log('正在計算所有測站的平均雨量...');
+        const hourlyAverages = new Map(); // Map<timestamp, { sum: number, count: number }>
+
+        // 遍歷所有測站資料，將同一時間點的雨量加總
+        Object.values(fullYearStationData).forEach(stationData => {
+            stationData.forEach(point => {
+                if (point.y !== null && point.y >= 0) {
+                    const timeKey = point.x.getTime();
+                    if (!hourlyAverages.has(timeKey)) {
+                        hourlyAverages.set(timeKey, { sum: 0, count: 0 });
+                    }
+                    const current = hourlyAverages.get(timeKey);
+                    current.sum += point.y;
+                    current.count++;
+                }
+            });
+        });
+
+        // 計算平均值並存入 fullYearAvgData
+        fullYearAvgData = Array.from(hourlyAverages.entries())
+            .map(([timeKey, data]) => ({
+                x: new Date(timeKey),
+                y: data.count > 0 ? data.sum / data.count : null,
+            }))
+            .sort((a, b) => a.x - b.x); // 確保資料按時間排序
+        console.log(`計算完成，共 ${fullYearAvgData.length} 筆平均雨量資料。`);
 
         // Update cache trackers
         currentLoadedReservoir = reservoirId;
@@ -528,7 +571,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     chart.update();
+    // After updating the chart, update the map marker colors
+    updateStationMarkerColors(startDate, endDate);
+
     renderDataTable();
+  }
+
+  /**
+   * Updates the color of station markers on the map based on their rainfall
+   * compared to the average rainfall for the selected period.
+   * @param {Date} startDate - The start of the date range.
+   * @param {Date} endDate - The end of the date range.
+   */
+  function updateStationMarkerColors(startDate, endDate) {
+      const showAvg = avgToggle.checked;
+
+      // If 'show average' is off, reset all markers to default and exit
+      if (!showAvg) {
+          Object.values(stationMarkers).forEach(marker => marker.setIcon(defaultIcon));
+          return;
+      }
+
+      const filterByDateRange = (data) => {
+          if (!data) return [];
+          return data.filter(d => d.x >= startDate && d.x < endDate);
+      };
+
+      // Calculate total average rainfall for the period
+      const avgDataForRange = filterByDateRange(fullYearAvgData);
+      const avgTotal = avgDataForRange.reduce((sum, dataPoint) => sum + (dataPoint.y > 0 ? dataPoint.y : 0), 0);
+
+      // Iterate through each station and update its marker color
+      Object.keys(fullYearStationData).forEach(stationId => {
+          const marker = stationMarkers[stationId];
+          if (!marker) return; // Skip if marker doesn't exist
+
+          const stationDataForRange = filterByDateRange(fullYearStationData[stationId]);
+          const stationTotal = stationDataForRange.reduce((sum, dataPoint) => sum + (dataPoint.y > 0 ? dataPoint.y : 0), 0);
+
+          if (stationTotal > 0) {
+              if (stationTotal > avgTotal) {
+                  marker.setIcon(aboveAverageIcon);
+              } else {
+                  marker.setIcon(belowAverageIcon);
+              }
+          } else {
+              marker.setIcon(noDataIcon);
+          }
+      });
   }
 
   /**
@@ -809,27 +899,25 @@ document.addEventListener("DOMContentLoaded", () => {
   
       } else if (source === 'station_max') {
           // --- Logic for Single Station Maximum ---
-          const dailyMaxes = new Map(); // dayKey -> { rain: number, station: string }
+          const dailyTotalsByStationAndDay = new Map(); // Key: dayKey, Value: Map(stationId -> totalRain)
   
           for (const stationId in fullYearStationData) {
-              const stationDailyTotals = new Map();
               fullYearStationData[stationId].forEach(point => {
                   if (point.y !== null && point.y > 0) {
                       const dayKey = getDayKey(point.x);
-                      const currentTotal = stationDailyTotals.get(dayKey) || 0;
-                      stationDailyTotals.set(dayKey, currentTotal + point.y);
+                      if (!dailyTotalsByStationAndDay.has(dayKey)) {
+                          dailyTotalsByStationAndDay.set(dayKey, new Map());
+                      }
+                      const stationTotalsForDay = dailyTotalsByStationAndDay.get(dayKey);
+                      const currentStationTotal = stationTotalsForDay.get(stationId) || 0;
+                      stationTotalsForDay.set(stationId, currentStationTotal + point.y);
                   }
               });
-  
-              for (const [day, total] of stationDailyTotals.entries()) {
-                  const existingMax = dailyMaxes.get(day);
-                  if (!existingMax || total > existingMax.rain) {
-                      dailyMaxes.set(day, { rain: total, station: stationId });
-                  }
-              }
           }
-  
-          const mappedSortedDays = Array.from(dailyMaxes.entries())
+          const mappedSortedDays = Array.from(dailyTotalsByStationAndDay.entries()).map(([day, stationTotals]) => {
+              const [station, rain] = [...stationTotals.entries()].reduce((max, current) => current[1] > max[1] ? current : max, ['', -1]);
+              return { day, rain, station };
+          })
               .map(([day, data]) => ({ day, ...data }))
               .sort((a, b) => b.rain - a.rain);
   
@@ -923,9 +1011,11 @@ document.addEventListener("DOMContentLoaded", () => {
    * @param {string|null} stationId - The ID of the station to highlight, or null to reset all.
    */
   function highlightStationMarker(stationId) {
-      // Reset all markers to the default icon
+      // Do not reset all icons here, as their color is now meaningful.
+      // The color is managed by updateStationMarkerColors.
+      // We only manage the 'highlighted' state here.
       Object.keys(stationMarkers).forEach(id => {
-          if (stationMarkers[id]) {
+          if (stationMarkers[id] && stationMarkers[id].options.icon === highlightedIcon) {
               stationMarkers[id].setIcon(defaultIcon);
           }
       });
@@ -944,8 +1034,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // --- Event Listeners ---
-    reservoirSelect.addEventListener("change", loadData);
-  datePicker.addEventListener("change", loadData);
   stationSelect.addEventListener("change", updateChart);
   daysSelect.addEventListener("change", updateChart);
   avgToggle.addEventListener("change", updateChart);
@@ -954,6 +1042,16 @@ document.addEventListener("DOMContentLoaded", () => {
     stationSelect.disabled = showAllStationsToggle.checked;
     updateChart();
   });
+
+  // Chain data loading and map loading for reservoir changes
+  reservoirSelect.addEventListener("change", async () => {
+    // Reset map markers to default immediately for better UX
+    Object.values(stationMarkers).forEach(marker => marker.setIcon(defaultIcon));
+    await loadMapData(); // Load new markers and boundaries
+    await loadData(); // Load new data, which will trigger chart and marker color updates
+  });
+
+  datePicker.addEventListener("change", loadData);
 
   downloadCsvBtn.addEventListener('click', () => {
     const csvContent = generateCSVContent();
@@ -1052,8 +1150,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /**
+   * Finds the day with the maximum average rainfall from the loaded yearly data.
+   * @returns {string|null} The date string 'YYYY-MM-DD' of the max rainfall day, or null if not found.
+   */
+  function findMaxAvgRainfallDay() {
+      if (fullYearAvgData.length === 0) {
+          return null;
+      }
+      const dailyTotals = new Map();
+      fullYearAvgData.forEach(point => {
+          if (point.y !== null && point.y > 0) {
+              const dayKey = getDayKey(point.x); // 'YYYY-MM-DD'
+              const currentTotal = dailyTotals.get(dayKey) || 0;
+              dailyTotals.set(dayKey, currentTotal + point.y);
+          }
+      });
+
+      if (dailyTotals.size === 0) {
+          return null; // No rainy days found
+      }
+
+      // Find the day with the maximum rainfall by converting map to array and sorting
+      const sortedDays = Array.from(dailyTotals.entries()).sort((a, b) => b[1] - a[1]);
+      return sortedDays[0][0]; // Return the date string of the top day
+  }
+
   // --- Initial Load ---
-  loadData();
+  async function initializeApp() {
+    await loadData(); // Load data for the default date (and thus the whole year)
+    const maxRainDay = findMaxAvgRainfallDay();
+    if (maxRainDay) {
+        datePicker.value = maxRainDay;
+        updateChart(); // Update the chart to show the max rain day
+    }
+  }
 
   // --- Map Initialization ---
   // Define base map layers
@@ -1105,6 +1236,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add layer control to the map
   L.control.layers(baseLayers).addTo(map);
+
+  // --- Custom Legend Control ---
+  const legend = L.control({ position: 'bottomright' });
+
+  legend.onAdd = function (map) {
+      const div = L.DomUtil.create('div', 'info legend');
+      const items = {
+          '高於平均': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+          '低於平均': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+          '無資料': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png'
+      };
+
+      let labels = ['<h5>圖例</h5>'];
+      for (const label in items) {
+          labels.push(
+              `<div><img src="${items[label]}" class="legend-icon"> ${label}</div>`
+          );
+      }
+
+      div.innerHTML = labels.join('');
+      return div;
+  };
+
+  legend.addTo(map);
+
 
   // --- Custom "Home" button to reset view ---
   const HomeControl = L.Control.extend({
@@ -1226,6 +1382,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  reservoirSelect.addEventListener("change", loadMapData);
+  initializeApp();
   loadMapData();
 });
