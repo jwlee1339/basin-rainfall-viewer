@@ -45,6 +45,26 @@ body {
     color: #333;
 }
 
+/* --- Leaflet Legend Control --- */
+.legend {
+    padding: 8px 12px;
+    font: 14px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    line-height: 24px;
+    color: #555;
+}
+.legend h5 {
+    margin: 0 0 5px;
+    color: #333;
+}
+.legend-icon {
+    width: 12px;
+    height: 20px;
+    margin-right: 5px;
+}
 /* --- Custom Home Button for Leaflet --- */
 .leaflet-control-home {
     font-size: 1.5em;
